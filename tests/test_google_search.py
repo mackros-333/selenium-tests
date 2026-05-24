@@ -1,12 +1,14 @@
 import pytest
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from pages.main_page import MainPage
 
 
-def test_find_book_on_page():
+
+def test_find_book_via_page_object():
     """
-    Тест: открыть books.toscrape.com и найти книгу по названию.
+    Тот же тест, но через Page Object Model.
+    Тест не знает как устроена страница - он использует класс MainPage.
     """
 
     chrome_options = Options()
@@ -15,29 +17,29 @@ def test_find_book_on_page():
     driver = webdriver.Chrome(options=chrome_options)
 
     try:
-        # Шаг 1: Открыть сайт
-        driver.get("https://books.toscrape.com")
+        # Создаём объект страницы
+        main_page = MainPage(driver)
+        
+        # Открываем страницу
+        main_page.open()
+
+        # Ждём загрузки
         driver.implicitly_wait(2)
 
-        # Шаг 2: Найти все заголовки книг (теги h3, внутри — ссылка с названием)
-        # Ищем все теги <h3>, внутри них <a> с атрибутом title
-        book_titles = []
-        book_elements = driver.find_elements(By.CSS_SELECTOR, "h3 a")
+        # Получаем названия книг через Page Object (а не напрямую)
+        book_titles = main_page.get_all_book_titles()
+        book_count = main_page.get_book_count()
 
-        for element in book_elements:
-            title = element.get_attribute("title")
-            if title:
-                book_titles.append(title)
+        print(f"Найдено книг на странице: {book_count}")
 
-        print(f"Найдено книг на странице: {len(book_titles)}")
 
-        # Шаг 3: Проверить, что нужная книга есть в списке
+        # Проверяем, что книга есть
         target_book = "A Light in the Attic"
         assert target_book in book_titles, (
-            f"Книга '{target_book}' не найдена! Книги на странице: {book_titles[:5]}..."
+            f"Книга '{target_book}' не найдена!"
         )
 
-        print(f"ТЕСТ ПРОЙДЕН: Книга '{target_book}' найдена на странице!")
+        print(f"ТЕСТ ПРОЙДЕН: Книга '{target_book}' найдена через Page Object!")
 
     finally:
         driver.quit()
